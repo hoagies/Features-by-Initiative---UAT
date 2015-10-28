@@ -11,34 +11,43 @@
     extend: 'Rally.app.App',
     componentCls: 'app',
 	launch: function() {
+		
+		// Radian
+		// var project_oid = '/project/37192747640';
 
 		this.add({
 			xtype: 'rallycombobox',
 			stateful: true,
-			stateId: this.getContext().getScopedStateId('theme'),
+			stateId: this.getContext().getScopedStateId('initiative'),
 			width: 600,
-			fieldLabel: 'Select Theme:',
+			fieldLabel: 'Select Initiative:',
 			// Display Template
 			displayTpl: Ext.create('Ext.XTemplate','<tpl for=".">','{FormattedID} - {Name}','</tpl>'),
 			// List Template
 			tpl: Ext.create('Ext.XTemplate','<tpl for=".">','<div class="x-boundlist-item">{FormattedID} - {Name}</div>','</tpl>'),
 			storeConfig: {
 				autoLoad: true,
-				model: 'PortfolioItem/Theme',
-				fetch: ['FormattedID','Name'],
+				model: 'PortfolioItem/Initiative',
+				fetch: ['FormattedID', 'Name'],
 				sorters: [
 					{
-						property: 'Rank',
+						property: 'ObjectID',
 						direction: 'ASC'
 					}
 				],
-				filters : [
-					{ property: 'Parent.FormattedID', operator: '=', value: 'I79' }
-				],
-				limit: Infinity
+				remoteGroup: false,
+				remoteSort: false,
+				remoteFilter: false,
+				limit: Infinity,
+				// context: {
+					// project: project_oid,
+					// projectScopeDown: true,
+					// projectScopeUp: false
+				// }
 			},
 			listeners: {
-				select: this._onSelect,
+				// select: this._onSelect,
+				select: this._onLoad,
 				ready: this._onLoad,
 				scope: this
 			}
@@ -46,28 +55,67 @@
 	},
 		
 	_onLoad: function() {
+		var project_oid = '/project/37192747640';
+		
+		if (this.down('#features')) {
+			this.down('#features').destroy();
+		}
+		
 		this.add({
-			xtype: 'rallycardboard',
-			types: ['User Story'],
+			id: 'features',
+			xtype: 'rallygridboard',
+			modelNames: ['PortfolioItem/Feature'],
 			context: this.getContext(),
 			storeConfig: {
-				filters: [this._getThemeFilter()]
+				context: {
+					project: project_oid,
+					projectScopeDown: true,
+					projectScopeUp: false
+				},
+				filters: [this._getFilter()]
 			},
-			cardConfig: {
-				showIconsAndHighlightBorder: true,
-				editable: true,
-				showAge: true,
-				sorters: [
-					{
-						property: 'Rank',
-						direction: 'ASC'
-					}
-				],
-				fields: ['Tags']
+			columnConfig: {
+				plugins: [
+					{ptype: 'rallycolumncardcounter'}
+				]
 			},
-			rowConfig: {
-				field: 'Feature'
-			},
+            // cardBoardConfig: {
+                // attribute: 'State',
+				// fetch: ['Project', 'PercentDoneByStoryCount'],
+				// showIconsAndHighlightBorder: false,
+				// editable: false,
+				// showAge: true
+            // },
+			cardBoardConfig: this._getBoardConfig(),
+			// cardConfig: {
+				// xtype: 'rallycard',
+				// fields: ['State','Project']
+            // },
+			plugins: [
+				{
+					ptype: 'rallygridboardfieldpicker',
+					modelNames: ['PortfolioItem/Feature'],
+					headerPosition: 'left',
+					boardFieldDefaults: ['Project','PercentDoneByStoryCount']
+					// boardAlwaysSelectedValues: ['Project','PercentDoneByStoryCount']
+					// stateful: true,
+					// stateId: context.getScopedStateId('columns-example')
+				// }, {
+                    // ptype: 'rallygridboardcustomfiltercontrol',
+					// headerPosition: 'left',
+                    // filterControlConfig: {
+						// modelNames: ['PortfolioItem/Feature'],
+						// stateful: true,
+						// stateId: context.getScopedStateId('custom-filter-example')
+					// },
+                    // },
+					// showOwnerFilter: false
+					// ownerFilterControlConfig: {
+						// stateful: true,
+						// stateId: context.getScopedStateId('owner-filter-example')
+					// }
+                }
+			],
 			listeners: {
 				load: this._onLoadBoard,
 				scope: this
@@ -75,31 +123,62 @@
 		});
 	},
 	
+	// _onSelect: function() {
+
+	// },
+		
+	_getFilter: function() {
+		var combo = this.down('rallycombobox');
+		return {
+			property: 'Parent.Parent',
+			operator: '=',
+			value: combo.getValue()
+		},
+		{
+			property: 'c_UATTeamMember',
+			operator: '!=',
+			value: null
+		};
+	},
+
+	_getBoardConfig: function () {
+		return {
+			xtype: 'rallycardboard',
+			attribute: 'c_UATState',
+			rowConfig: {
+				field: 'c_UATTeamMember',
+				// sorters: [
+					// {
+						// property: this._getRankField(),
+						// direction: 'ASC'
+					// },
+					// {
+						// property: 'TaskIndex',
+						// direction: 'ASC'
+					// }
+				// ],
+				// headerConfig: {
+					// xtype: 'rallytaskboardrowheader'
+				// },
+				// sortField: this._getRankField(),
+				// enableCrossRowDragging: false
+			},
+			// margin: '10px 0 0 0',
+			// plugins: [{ptype:'rallyfixedheadercardboard'}]
+		};
+	},
+	
 	_onLoadBoard: function() {
 		var board = this.down('rallycardboard');
 		rows = board.getRows();
+		var rowsfilled = rows[0].columns[0]._cardsByRow;
+		console.log(rowsfilled);
+		// console.log(rows);
 		Ext.Array.each(rows, function(row) {
-			row.collapse();
+			// row.collapse();
+			console.log(row.value);
 		});
 	},
-	
-	_onSelect: function() {
-		var board = this.down('rallycardboard');
-		board.refresh({
-			storeConfig: {
-				filters: [this._getThemeFilter()]
-			}
-		});
-	},
-		
-	_getThemeFilter: function() {
-		var combo = this.down('rallycombobox');
-		return {
-			property: 'Feature.Parent',
-			operator: '=',
-			value: combo.getValue()
-		};
-	}
 
 });
 
