@@ -52,6 +52,8 @@ Ext.define('CustomApp', {
 			this.down('#features').destroy();
 		}
 		
+		var store = "";
+		
 		this.add({
 			id: 'features',
 			xtype: 'rallygridboard',
@@ -79,7 +81,13 @@ Ext.define('CustomApp', {
             // },
 			cardBoardConfig: this._getBoardConfig(),
 			gridConfig: {
-				
+				store: store,
+				columnCfgs: [
+					'Name',
+					'ScheduleState',
+					'Owner',
+					'PlanEstimate'
+				]
 			},
 			// cardConfig: {
 				// xtype: 'rallycard',
