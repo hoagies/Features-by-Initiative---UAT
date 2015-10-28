@@ -78,6 +78,9 @@ Ext.define('CustomApp', {
 				// showAge: true
             // },
 			cardBoardConfig: this._getBoardConfig(),
+			gridConfig: {
+				
+			},
 			// cardConfig: {
 				// xtype: 'rallycard',
 				// fields: ['State','Project']
